@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matrix Row Reduction — Gaussian Elimination Trainer</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1a1e2a;
+    --border: #242838;
+    --border2: #2e3450;
+    --accent: #4f9eff;
+    --accent2: #7b61ff;
+    --green: #3dd68c;
+    --red: #ff5f6d;
+    --yellow: #ffc947;
+    --orange: #ff9f43;
+    --text: #e8eaf0;
+    --text2: #8b90a8;
+    --text3: #555b78;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+
+  .logo { display: flex; flex-direction: column; gap: 2px; }
+  .logo-title { font-family: var(--mono); font-size: 1.1rem; font-weight: 600; letter-spacing: 0.05em; color: var(--text); }
+  .logo-sub { font-size: 0.72rem; color: var(--text3); font-family: var(--mono); letter-spacing: 0.12em; text-transform: uppercase; }
+
+  .header-controls { display: flex; gap: 10px; align-items: center; }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+  .btn:active { transform: translateY(1px); }
+
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #0d0f14; }
+  .btn-primary:hover { background: #6aadff; border-color: #6aadff; color: #0d0f14; }
+
+  .btn-danger { border-color: #ff5f6d44; }
+  .btn-danger:hover { border-color: var(--red); color: var(--red); }
+
+  .btn-success { border-color: #3dd68c44; }
+  .btn-success:hover { border-color: var(--green); color: var(--green); }
+
+  .btn-hint { border-color: #ff9f4344; color: var(--orange); }
+  .btn-hint:hover { border-color: var(--orange); color: var(--orange); background: #ff9f4311; }
+
+  .btn-sm { padding: 6px 12px; font-size: 0.72rem; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+  }
+  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .card-title {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .status-bar {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    flex-wrap: wrap;
+  }
+
+  .status-item { display: flex; align-items: center; gap: 8px; }
+  .status-label { font-size: 0.7rem; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; }
+  .status-val { font-family: var(--mono); font-size: 0.9rem; font-weight: 600; color: var(--text); }
+
+  .badge {
+    font-family: var(--mono); font-size: 0.68rem; padding: 3px 9px;
+    border-radius: 4px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .badge-blue { background: #4f9eff22; color: var(--accent); border: 1px solid #4f9eff44; }
+  .badge-green { background: #3dd68c22; color: var(--green); border: 1px solid #3dd68c44; }
+  .badge-yellow { background: #ffc94722; color: var(--yellow); border: 1px solid #ffc94744; }
+
+  .goal-toggle {
+    display: flex; gap: 4px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 3px;
+  }
+  .goal-btn {
+    font-family: var(--mono); font-size: 0.72rem; font-weight: 500;
+    padding: 6px 14px; border-radius: 5px; border: none; cursor: pointer;
+    transition: all 0.15s; color: var(--text2); background: transparent;
+  }
+  .goal-btn.active { background: var(--accent); color: #0d0f14; }
+
+  /* ── Matrix card header row ── */
+  .matrix-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .matrix-card-header .card-title {
+    margin-bottom: 0;
+    flex: 1;
+  }
+  .matrix-action-btns {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-left: 10px;
+  }
+
+  /* ── Hint box ── */
+  .hint-box {
+    display: none;
+    margin-top: 14px;
+    padding: 12px 16px;
+    background: #ff9f4311;
+    border: 1px solid #ff9f4355;
+    border-radius: 8px;
+    animation: fadeSlide 0.2s ease;
+  }
+  .hint-box.show { display: block; }
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .hint-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--orange);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hint-label::before { content: '◆'; font-size: 0.5rem; }
+  .hint-text {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--text2);
+    line-height: 1.55;
+  }
+  .hint-text strong { color: var(--orange); font-weight: 600; }
+
+  /* Matrix display */
+  .matrix-bracket {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  .matrix-bracket::before, .matrix-bracket::after {
+    content: ''; position: absolute; top: 0; bottom: 0; width: 10px;
+    border: 2px solid var(--text2);
+  }
+  .matrix-bracket::before { left: -14px; border-right: none; border-radius: 3px 0 0 3px; }
+  .matrix-bracket::after  { right: -14px; border-left: none; border-radius: 0 3px 3px 0; }
+
+  .matrix-cell {
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    font-weight: 400;
+    text-align: center;
+    padding: 10px 18px;
+    min-width: 58px;
+    color: var(--text);
+    transition: background 0.2s;
+    user-select: none;
+  }
+  .matrix-cell.pivot { color: var(--accent); font-weight: 600; }
+  .matrix-cell.augment-sep { border-left: 1px dashed var(--border2); }
+
+  .row-label {
+    font-family: var(--mono); font-size: 0.72rem; color: var(--text3);
+    padding: 10px 12px 10px 0; display: flex; align-items: center;
+  }
+
+  .matrix-scroll { overflow-x: auto; width: 100%; }
+  .matrix-inner  { display: inline-flex; align-items: center; padding: 0 20px; }
+
+  /* Operations */
+  .op-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; transition: border-color 0.15s;
+  }
+  .op-card:hover { border-color: var(--border2); }
+  .op-title { font-family: var(--mono); font-size: 0.72rem; color: var(--accent2); margin-bottom: 10px; font-weight: 500; letter-spacing: 0.03em; }
+  .op-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .op-label { font-family: var(--mono); font-size: 0.7rem; color: var(--text3); white-space: nowrap; }
+
+  select, input[type="text"] {
+    font-family: var(--mono); font-size: 0.82rem;
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border2); border-radius: 5px;
+    padding: 6px 10px; outline: none; transition: border-color 0.15s; -webkit-appearance: none;
+  }
+  select { cursor: pointer; padding-right: 28px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555b78' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
+  select:focus, input:focus { border-color: var(--accent); }
+  select.row-select { width: 56px; }
+  input.scalar-input { width: 68px; }
+
+  /* History */
+  .history-log { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .history-log::-webkit-scrollbar { width: 4px; }
+  .history-log::-webkit-scrollbar-track { background: transparent; }
+  .history-log::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .history-entry {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 10px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 6px;
+    animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .history-num { font-family: var(--mono); font-size: 0.65rem; color: var(--text3); min-width: 22px; padding-top: 1px; }
+  .history-op  { font-family: var(--mono); font-size: 0.78rem; color: var(--text2); flex: 1; }
+  .history-empty { font-family: var(--mono); font-size: 0.78rem; color: var(--text3); text-align: center; padding: 20px; font-style: italic; }
+
+  /* Success */
+  .success-overlay { display: none; position: fixed; inset: 0; background: #0d0f14cc; backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; }
+  .success-overlay.show { display: flex; }
+  .success-modal { background: var(--surface); border: 1px solid var(--green); border-radius: 16px; padding: 40px 48px; text-align: center; max-width: 400px; animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes popIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .success-icon  { font-size: 3rem; margin-bottom: 16px; display: block; }
+  .success-title { font-family: var(--mono); font-size: 1.2rem; font-weight: 600; color: var(--green); margin-bottom: 8px; }
+  .success-sub   { font-size: 0.88rem; color: var(--text2); margin-bottom: 24px; }
+  .success-stats { display: flex; gap: 24px; justify-content: center; margin-bottom: 28px; }
+  .success-stat  { display: flex; flex-direction: column; gap: 4px; }
+  .success-stat-val   { font-family: var(--mono); font-size: 1.8rem; font-weight: 600; color: var(--text); }
+  .success-stat-label { font-size: 0.72rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface); border: 1px solid var(--red); border-radius: 8px;
+    padding: 12px 18px; font-family: var(--mono); font-size: 0.8rem; color: var(--red);
+    z-index: 200; transform: translateY(80px); opacity: 0; transition: all 0.25s; max-width: 320px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* New game */
+  .new-game-panel { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .size-label { font-family: var(--mono); font-size: 0.72rem; color: var(--text3); }
+  .size-select-group { display: flex; align-items: center; gap: 8px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+
+  /* Footer */
+  footer {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px 16px 28px;
+    margin-top: 40px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--text3);
+    flex-wrap: wrap;
+    gap: 0;
+  }
+  .footer-name { color: var(--text2); font-weight: 500; letter-spacing: 0.04em; }
+  .footer-sep  { margin: 0 10px; color: var(--border2); }
+  .footer-link { color: var(--text3); text-decoration: none; transition: color 0.15s; }
+  .footer-link:hover { color: var(--accent); }
+  .footer-linkedin { display: inline-flex; align-items: center; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo">
+      <div class="logo-title">[ Matrix Trainer ]</div>
+      <div class="logo-sub">Gaussian Elimination Practice</div>
+    </div>
+    <div class="header-controls">
+      <div class="goal-toggle">
+        <button class="goal-btn active" id="btn-ref"  onclick="setGoal('REF')">REF</button>
+        <button class="goal-btn"        id="btn-rref" onclick="setGoal('RREF')">RREF</button>
+      </div>
+      <button class="btn btn-sm" onclick="openNewGamePanel()">⊕ New</button>
+    </div>
+  </header>
+
+  <!-- New Game Panel -->
+  <div id="new-game-panel" style="display:none; margin-bottom:20px;">
+    <div class="card">
+      <div class="card-title">New Game</div>
+      <div class="new-game-panel">
+        <span class="size-label">Matrix size:</span>
+        <div class="size-select-group">
+          <select id="sel-rows" style="width:58px;">
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+          </select>
+          <span class="size-label">×</span>
+          <select id="sel-cols" style="width:58px;">
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4" selected>4</option>
+            <option value="5">5</option>
+          </select>
+        </div>
+        <span class="size-label">Augmented:</span>
+        <input type="checkbox" id="chk-augmented" checked style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent);">
+        <button class="btn btn-primary btn-sm" onclick="newGame()">Generate</button>
+        <button class="btn btn-sm" onclick="closeNewGamePanel()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="status-item">
+      <span class="status-label">Steps</span>
+      <span class="status-val" id="step-count">0</span>
+    </div>
+    <div style="width:1px;height:20px;background:var(--border);"></div>
+    <div class="status-item">
+      <span class="status-label">Goal</span>
+      <span class="badge badge-blue" id="goal-badge">REF</span>
+    </div>
+    <div style="width:1px;height:20px;background:var(--border);"></div>
+    <div class="status-item">
+      <span class="status-label">Status</span>
+      <span class="badge badge-yellow" id="status-badge">In Progress</span>
+    </div>
+    <div style="margin-left:auto;">
+      <button class="btn btn-success btn-sm" onclick="checkStatus(true)">Check ✓</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- Left: Matrix + Operations -->
+    <div>
+      <!-- Matrix Card -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="matrix-card-header">
+          <div class="card-title">Current Matrix</div>
+          <div class="matrix-action-btns">
+            <button class="btn btn-hint btn-sm" onclick="showHint()">💡 Hint</button>
+            <button class="btn btn-danger btn-sm" onclick="undoStep()">↩ Undo</button>
+          </div>
+        </div>
+        <div class="matrix-scroll">
+          <div class="matrix-inner" id="matrix-display"></div>
+        </div>
+        <!-- Hint box lives inside the matrix card -->
+        <div class="hint-box" id="hint-box">
+          <div class="hint-label">Hint</div>
+          <div class="hint-text" id="hint-text"></div>
+        </div>
+      </div>
+
+      <!-- Operations -->
+      <div class="card">
+        <div class="card-title">Elementary Row Operations</div>
+
+        <!-- Op 1: Swap -->
+        <div class="op-card">
+          <div class="op-title">① Swap Rows — Rᵢ ↔ Rⱼ</div>
+          <div class="op-row">
+            <span class="op-label">Rᵢ</span>
+            <select class="row-select" id="swap-i"></select>
+            <span class="op-label">↔</span>
+            <select class="row-select" id="swap-j"></select>
+            <button class="btn btn-sm" onclick="opSwap()">Swap</button>
+          </div>
+        </div>
+
+        <!-- Op 2: Scale -->
+        <div class="op-card">
+          <div class="op-title">② Scale Row — Rᵢ ← c · Rᵢ</div>
+          <div class="op-row">
+            <select class="row-select" id="scale-i"></select>
+            <span class="op-label">←</span>
+            <input class="scalar-input" type="text" id="scale-c" value="2" placeholder="c">
+            <span class="op-label">·</span>
+            <span class="op-label" id="scale-i-label" style="color:var(--text2);">R₁</span>
+            <button class="btn btn-sm" onclick="opScale()">Multiply</button>
+          </div>
+        </div>
+
+        <!-- Op 3: Add multiple -->
+        <div class="op-card">
+          <div class="op-title">③ Row Replacement — Rᵢ ← Rᵢ + c · Rⱼ</div>
+          <div class="op-row">
+            <select class="row-select" id="add-i"></select>
+            <span class="op-label">←</span>
+            <span class="op-label" style="color:var(--text2);" id="add-i-label">R₁</span>
+            <span class="op-label">+</span>
+            <input class="scalar-input" type="text" id="add-c" value="-1" placeholder="c">
+            <span class="op-label">·</span>
+            <select class="row-select" id="add-j"></select>
+            <button class="btn btn-sm" onclick="opAdd()">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: History -->
+    <div>
+      <div class="card" style="height:100%;">
+        <div class="card-title">Operation Log</div>
+        <div class="history-log" id="history-log">
+          <div class="history-empty">No operations yet.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Success Overlay -->
+<div class="success-overlay" id="success-overlay">
+  <div class="success-modal">
+    <span class="success-icon">✓</span>
+    <div class="success-title" id="success-title">Matrix Reduced!</div>
+    <div class="success-sub"   id="success-sub">You reached Row Echelon Form.</div>
+    <div class="success-stats">
+      <div class="success-stat">
+        <span class="success-stat-val"   id="success-steps">0</span>
+        <span class="success-stat-label">Steps</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-primary" onclick="newGame();closeSuccess()">New Game</button>
+      <button class="btn" onclick="closeSuccess()">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Footer -->
+<footer>
+  <span class="footer-name">Lihi Raviv</span>
+  <span class="footer-sep">·</span>
+  <a href="mailto:ravivlihi@gmail.com" class="footer-link">ravivlihi@gmail.com</a>
+  <span class="footer-sep">·</span>
+  <a href="https://www.linkedin.com/in/lihi-raviv-35b166289" target="_blank" rel="noopener" class="footer-link footer-linkedin">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px;margin-top:-2px;"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+    LinkedIn
+  </a>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════
+// FRACTION MATH
+// ═══════════════════════════════════════════════
+
+function gcd(a, b) {
+  a = Math.abs(a); b = Math.abs(b);
+  while (b) { [a, b] = [b, a % b]; }
+  return a || 1;
+}
+
+class Frac {
+  constructor(n, d = 1) {
+    if (typeof n === 'string') {
+      n = n.trim();
+      if (n.includes('/')) {
+        const parts = n.split('/');
+        this.n = parseInt(parts[0].trim());
+        this.d = parseInt(parts[1].trim());
+      } else {
+        const f = parseFloat(n);
+        if (isNaN(f)) { this.n = 0; this.d = 1; return; }
+        const str = f.toString();
+        const dec = str.includes('.') ? str.split('.')[1].length : 0;
+        const pow = Math.pow(10, dec);
+        this.n = Math.round(f * pow);
+        this.d = pow;
+      }
+    } else {
+      this.n = n; this.d = d;
+    }
+    if (this.d === 0) throw new Error('Division by zero');
+    this.reduce();
+  }
+
+  reduce() {
+    if (this.d < 0) { this.n = -this.n; this.d = -this.d; }
+    const g = gcd(Math.abs(this.n), Math.abs(this.d));
+    this.n /= g; this.d /= g;
+    return this;
+  }
+
+  add(b) { return new Frac(this.n * b.d + b.n * this.d, this.d * b.d); }
+  sub(b) { return new Frac(this.n * b.d - b.n * this.d, this.d * b.d); }
+  mul(b) { return new Frac(this.n * b.n, this.d * b.d); }
+  div(b) { return new Frac(this.n * b.d, this.d * b.n); }
+  neg()  { return new Frac(-this.n, this.d); }
+  isZero()  { return this.n === 0; }
+  isOne()   { return this.n === this.d; }
+  isInt()   { return this.d === 1; }
+  toInt()   { return this.n; }
+  equals(b) { return this.n === b.n && this.d === b.d; }
+  toString() { return this.d === 1 ? String(this.n) : `${this.n}/${this.d}`; }
+}
+
+const F0 = new Frac(0);
+const F1 = new Frac(1);
+
+function parseFrac(str) {
+  try { return new Frac(str); } catch { return null; }
+}
+
+// ═══════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════
+
+let matrix    = [];
+let history   = [];   // stack of {matrix, desc} snapshots
+let opHistory = [];   // list of op strings for the log
+let rows = 3, cols = 4;
+let augmented = true;
+let goal = 'REF';
+let stepCount = 0;
+
+// ═══════════════════════════════════════════════
+// INTEGER-ONLY MATRIX GENERATION (reverse scramble)
+// ═══════════════════════════════════════════════
+// Strategy:
+//  1. Start with a diagonal/triangular "nice" matrix with small integer entries (1s and 2s).
+//  2. Apply a series of random integer row-replacement operations IN REVERSE to produce a
+//     scrambled matrix that is guaranteed to reduce to REF/RREF using only integer scalars.
+//  3. This means the student never encounters fractions during the optimal path.
+
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function cloneMatrix(m) {
+  return m.map(row => row.map(f => new Frac(f.n, f.d)));
+}
+
+function generateIntegerScrambledMatrix(r, c) {
+  // Build a clean upper-triangular starting matrix
+  const m = [];
+  for (let i = 0; i < r; i++) {
+    const row = [];
+    for (let j = 0; j < c; j++) {
+      if (j < r) {
+        // Coefficient sub-matrix: upper triangular, 1s on diagonal, small ints above
+        if (j === i)      row.push(new Frac(1));
+        else if (j > i)   row.push(new Frac(randomInt(0, 2)));
+        else              row.push(F0);
+      } else {
+        // Augmented column(s): small positive integers
+        row.push(new Frac(randomInt(1, 6)));
+      }
+    }
+    m.push(row);
+  }
+
+  // Apply 6–10 random integer row-replacement scrambling operations
+  // Rᵢ ← Rᵢ + k·Rⱼ  where i > j (forward direction means we add lower to upper)
+  // To scramble in a way that stays integer-solvable, we add a MULTIPLE of a LATER row
+  // to an EARLIER row (which is the reverse of forward elimination).
+  const ops = randomInt(6, 10);
+  for (let op = 0; op < ops; op++) {
+    // Pick two distinct rows; target can be any, source any other
+    let i = randomInt(0, r - 1);
+    let j = randomInt(0, r - 1);
+    while (j === i) j = randomInt(0, r - 1);
+    const k = randomInt(-3, 3);
+    if (k === 0) continue;
+    const kF = new Frac(k);
+    for (let col = 0; col < c; col++) {
+      m[i][col] = m[i][col].add(kF.mul(m[j][col]));
+    }
+  }
+
+  // Optionally do one or two row swaps to mix things up
+  const swaps = randomInt(0, 2);
+  for (let s = 0; s < swaps; s++) {
+    const i = randomInt(0, r - 1);
+    const j = randomInt(0, r - 1);
+    if (i !== j) [m[i], m[j]] = [m[j], m[i]];
+  }
+
+  // Safety: if the matrix looks already in REF, do one more forced scramble
+  if (isREFMatrix(m, r, c, augmented)) {
+    const i = r - 1;
+    const j = 0;
+    const kF = new Frac(randomInt(1, 3));
+    for (let col = 0; col < c; col++) m[i][col] = m[i][col].add(kF.mul(m[j][col]));
+  }
+
+  return m;
+}
+
+// ═══════════════════════════════════════════════
+// NEW GAME
+// ═══════════════════════════════════════════════
+
+function newGame() {
+  rows      = parseInt(document.getElementById('sel-rows').value);
+  cols      = parseInt(document.getElementById('sel-cols').value);
+  augmented = document.getElementById('chk-augmented').checked;
+
+  if (augmented && cols <= rows) cols = rows + 1;
+
+  matrix    = generateIntegerScrambledMatrix(rows, cols);
+  history   = [];
+  opHistory = [];
+  stepCount = 0;
+
+  document.getElementById('step-count').textContent = '0';
+  updateStatusBadge('In Progress', 'badge-yellow');
+  hideHint();
+  renderMatrix();
+  renderHistory();
+  populateRowSelects();
+  closeNewGamePanel();
+  closeSuccess();
+}
+
+function openNewGamePanel()  { document.getElementById('new-game-panel').style.display = 'block'; }
+function closeNewGamePanel() { document.getElementById('new-game-panel').style.display = 'none'; }
+
+function setGoal(g) {
+  goal = g;
+  document.getElementById('btn-ref').classList.toggle('active',  g === 'REF');
+  document.getElementById('btn-rref').classList.toggle('active', g === 'RREF');
+  document.getElementById('goal-badge').textContent = g;
+  hideHint();
+  checkStatus(false);
+}
+
+// ═══════════════════════════════════════════════
+// ROW SELECT HELPERS
+// ═══════════════════════════════════════════════
+
+function subscriptNum(n) {
+  const subs = '₀₁₂₃₄₅₆₇₈₉';
+  return String(n).split('').map(c => subs[parseInt(c)] || c).join('');
+}
+function rowLabel(i) { return `R${subscriptNum(i + 1)}`; }
+
+function populateRowSelects() {
+  ['swap-i','swap-j','scale-i','add-i','add-j'].forEach(id => {
+    const sel = document.getElementById(id);
+    const prev = sel.value;
+    sel.innerHTML = '';
+    for (let i = 0; i < rows; i++) {
+      const opt = document.createElement('option');
+      opt.value = i; opt.textContent = rowLabel(i);
+      sel.appendChild(opt);
+    }
+    if (prev !== '' && prev < rows) sel.value = prev;
+  });
+  if (rows > 1) document.getElementById('add-j').value = 1;
+  updateScaleLabel();
+  updateAddLabel();
+  document.getElementById('scale-i').onchange = updateScaleLabel;
+  document.getElementById('add-i').onchange   = updateAddLabel;
+}
+
+function updateScaleLabel() {
+  const i = parseInt(document.getElementById('scale-i').value);
+  document.getElementById('scale-i-label').textContent = rowLabel(i);
+}
+function updateAddLabel() {
+  const i = parseInt(document.getElementById('add-i').value);
+  document.getElementById('add-i-label').textContent = rowLabel(i);
+}
+
+// ═══════════════════════════════════════════════
+// RENDER MATRIX
+// ═══════════════════════════════════════════════
+
+function findPivots(m, r, c, aug) {
+  const pivots = [];
+  let pivotCol = -1;
+  const colLim = aug ? c - 1 : c;
+  for (let i = 0; i < r; i++) {
+    for (let j = pivotCol + 1; j < colLim; j++) {
+      if (!m[i][j].isZero()) { pivots.push([i, j]); pivotCol = j; break; }
+    }
+  }
+  return pivots;
+}
+
+function renderMatrix() {
+  const container = document.getElementById('matrix-display');
+  container.innerHTML = '';
+
+  const bracket  = document.createElement('div');
+  bracket.className = 'matrix-bracket';
+
+  const labelCol = document.createElement('div');
+  labelCol.style.cssText = 'display:flex;flex-direction:column;margin-right:4px;';
+
+  const pivots   = findPivots(matrix, rows, cols, augmented);
+  const pivotSet = new Set(pivots.map(p => `${p[0]},${p[1]}`));
+
+  for (let i = 0; i < rows; i++) {
+    const lbl = document.createElement('div');
+    lbl.className = 'row-label';
+    lbl.textContent = rowLabel(i);
+    labelCol.appendChild(lbl);
+  }
+  container.appendChild(labelCol);
+
+  const grid = document.createElement('div');
+  grid.style.cssText = `display:grid;grid-template-columns:repeat(${cols},auto);`;
+
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < cols; j++) {
+      const cell = document.createElement('div');
+      cell.className = 'matrix-cell';
+      if (pivotSet.has(`${i},${j}`)) cell.classList.add('pivot');
+      if (augmented && j === cols - 1) cell.classList.add('augment-sep');
+      cell.textContent = matrix[i][j].toString();
+      grid.appendChild(cell);
+    }
+  }
+
+  bracket.appendChild(grid);
+  container.appendChild(bracket);
+}
+
+// ═══════════════════════════════════════════════
+// REF / RREF CHECKERS (accept a matrix argument for reuse)
+// ═══════════════════════════════════════════════
+
+function isREFMatrix(m, r, c, aug) {
+  const colLim = aug ? c - 1 : c;
+  let lastPivotCol = -1;
+  let zeroRowSeen  = false;
+  for (let i = 0; i < r; i++) {
+    let pj = -1;
+    for (let j = 0; j < colLim; j++) {
+      if (!m[i][j].isZero()) { pj = j; break; }
+    }
+    if (pj === -1) { zeroRowSeen = true; }
+    else {
+      if (zeroRowSeen)         return false;
+      if (pj <= lastPivotCol)  return false;
+      lastPivotCol = pj;
+    }
+  }
+  return true;
+}
+
+function isRREFMatrix(m, r, c, aug) {
+  if (!isREFMatrix(m, r, c, aug)) return false;
+  const colLim = aug ? c - 1 : c;
+  for (let i = 0; i < r; i++) {
+    let pj = -1;
+    for (let j = 0; j < colLim; j++) { if (!m[i][j].isZero()) { pj = j; break; } }
+    if (pj === -1) continue;
+    if (!m[i][pj].isOne()) return false;
+    for (let row = 0; row < r; row++) {
+      if (row !== i && !m[row][pj].isZero()) return false;
+    }
+  }
+  return true;
+}
+
+function isREF()  { return isREFMatrix(matrix, rows, cols, augmented); }
+function isRREF() { return isRREFMatrix(matrix, rows, cols, augmented); }
+
+function checkStatus(showToast) {
+  const ok = goal === 'REF' ? isREF() : isRREF();
+  if (ok) {
+    updateStatusBadge(goal === 'REF' ? 'REF ✓' : 'RREF ✓', 'badge-green');
+    showSuccess();
+  } else {
+    updateStatusBadge('In Progress', 'badge-yellow');
+    if (showToast) showToastMsg(`Not yet ${goal}. Keep going!`);
+  }
+  return ok;
+}
+
+function updateStatusBadge(text, cls) {
+  const b = document.getElementById('status-badge');
+  b.textContent = text;
+  b.className = `badge ${cls}`;
+}
+
+// ═══════════════════════════════════════════════
+// HINT SYSTEM
+// ═══════════════════════════════════════════════
+// Analyses the current matrix state and suggests the next logical step
+// toward REF (or RREF). Never performs the operation itself.
+
+function computeHint() {
+  const colLim = augmented ? cols - 1 : cols;
+
+  // ── PHASE 1: Find where REF is broken ──────────────────────────────────
+  // Walk through rows and find the first "problem" to fix.
+
+  let pivotCol = -1;
+  for (let i = 0; i < rows; i++) {
+    // Find the leading non-zero in this row (scanning from after last pivot col)
+    let pj = -1;
+    for (let j = pivotCol + 1; j < colLim; j++) {
+      if (!matrix[i][j].isZero()) { pj = j; break; }
+    }
+
+    if (pj === -1) {
+      // Row i is all-zero in coefficient part.
+      // Check if any row BELOW also has non-zero entries — if so, we need a swap.
+      for (let k = i + 1; k < rows; k++) {
+        for (let j = pivotCol + 1; j < colLim; j++) {
+          if (!matrix[k][j].isZero()) {
+            return `Swap <strong>${rowLabel(i)}</strong> and <strong>${rowLabel(k)}</strong> `
+                 + `to move the zero row to the bottom. (${rowLabel(i)} ↔ ${rowLabel(k)})`;
+          }
+        }
+      }
+      // All remaining rows are zero — we're done with forward elimination
+      break;
+    }
+
+    // ── Check: is there a row above with a later pivot that belongs below? ──
+    // (i.e., pivot staircase is violated — a swap is needed)
+    if (pj <= pivotCol) {
+      // Find a row below with a valid pivot further right
+      for (let k = i + 1; k < rows; k++) {
+        let pkj = -1;
+        for (let j = pivotCol + 1; j < colLim; j++) {
+          if (!matrix[k][j].isZero()) { pkj = j; break; }
+        }
+        if (pkj !== -1 && pkj > pivotCol) {
+          return `The pivot staircase is violated. Swap <strong>${rowLabel(i)}</strong> `
+               + `and <strong>${rowLabel(k)}</strong> to restore the correct order.`;
+        }
+      }
+    }
+
+    // ── Check: are there non-zero entries BELOW in this pivot column? ──
+    // (Forward elimination not complete for this column)
+    let belowNonZero = false;
+    for (let k = i + 1; k < rows; k++) {
+      if (!matrix[k][pj].isZero()) { belowNonZero = true; break; }
+    }
+
+    if (belowNonZero) {
+      // Suggest elimination. Check if pivot value lets us do integer elimination.
+      const pivotVal = matrix[i][pj];
+      // Find first row below that is non-zero in this column
+      for (let k = i + 1; k < rows; k++) {
+        if (!matrix[k][pj].isZero()) {
+          const targetVal = matrix[k][pj];
+          // Ideal scalar: -targetVal / pivotVal
+          const scalar = targetVal.neg().div(pivotVal);
+          const scalarStr = scalar.toString();
+          return `There is a non-zero entry in column ${pj + 1} below the pivot. `
+               + `Eliminate it: <strong>${rowLabel(k)} ← ${rowLabel(k)} + (${scalarStr})·${rowLabel(i)}</strong>.`;
+        }
+      }
+    }
+
+    // ── If in RREF mode, check above pivot column for non-zeros ──
+    if (goal === 'RREF' && isREF()) {
+      // Back-substitution phase
+      // Find rows from bottom that have pivots and eliminate upward
+      for (let ii = rows - 1; ii >= 1; ii--) {
+        let ppj = -1;
+        for (let j = 0; j < colLim; j++) {
+          if (!matrix[ii][j].isZero()) { ppj = j; break; }
+        }
+        if (ppj === -1) continue;
+
+        // Check pivot is 1
+        if (!matrix[ii][ppj].isOne()) {
+          const pv = matrix[ii][ppj];
+          return `The pivot in <strong>${rowLabel(ii)}</strong> is ${pv.toString()}, not 1. `
+               + `Scale the row: <strong>${rowLabel(ii)} ← (1/${pv.toString()})·${rowLabel(ii)}</strong>.`;
+        }
+
+        // Check above for non-zeros
+        for (let rr = 0; rr < ii; rr++) {
+          if (!matrix[rr][ppj].isZero()) {
+            const aboveVal = matrix[rr][ppj];
+            const scalar = aboveVal.neg();
+            return `For RREF, eliminate the entry above the pivot in column ${ppj + 1}. `
+                 + `<strong>${rowLabel(rr)} ← ${rowLabel(rr)} + (${scalar.toString()})·${rowLabel(ii)}</strong>.`;
+          }
+        }
+      }
+
+      // Check top pivot too
+      let ppj0 = -1;
+      for (let j = 0; j < colLim; j++) {
+        if (!matrix[0][j].isZero()) { ppj0 = j; break; }
+      }
+      if (ppj0 !== -1 && !matrix[0][ppj0].isOne()) {
+        const pv = matrix[0][ppj0];
+        return `The pivot in <strong>${rowLabel(0)}</strong> is ${pv.toString()}, not 1. `
+             + `Scale it: <strong>${rowLabel(0)} ← (1/${pv.toString()})·${rowLabel(0)}</strong>.`;
+      }
+    }
+
+    pivotCol = pj;
+  }
+
+  // ── PHASE 2: RREF — check all pivots are 1 ──────────────────────────────
+  if (goal === 'RREF') {
+    for (let i = 0; i < rows; i++) {
+      let pj = -1;
+      for (let j = 0; j < colLim; j++) {
+        if (!matrix[i][j].isZero()) { pj = j; break; }
+      }
+      if (pj === -1) continue;
+      if (!matrix[i][pj].isOne()) {
+        const pv = matrix[i][pj];
+        return `The pivot in <strong>${rowLabel(i)}</strong> is ${pv.toString()}, not 1. `
+             + `To make it 1, multiply: <strong>${rowLabel(i)} ← (1/${pv.toString()})·${rowLabel(i)}</strong>. `
+             + `(You can write this as a fraction like 1/${pv.toString()} in the scalar field.)`;
+      }
+    }
+  }
+
+  // If we reach here, the matrix may already be solved
+  const already = goal === 'REF' ? isREF() : isRREF();
+  if (already) return `The matrix is already in <strong>${goal}</strong>! Hit "Check ✓" to confirm.`;
+  return `The matrix is looking good so far — continue applying row operations to progress toward ${goal}.`;
+}
+
+function showHint() {
+  const hintBox  = document.getElementById('hint-box');
+  const hintText = document.getElementById('hint-text');
+  const msg = computeHint();
+  hintText.innerHTML = msg;
+  hintBox.classList.add('show');
+}
+
+function hideHint() {
+  document.getElementById('hint-box').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════
+// ELEMENTARY ROW OPERATIONS
+// ═══════════════════════════════════════════════
+
+function pushHistory(desc) {
+  history.push({ matrix: cloneMatrix(matrix), desc });
+  opHistory.push(desc);
+  stepCount++;
+  document.getElementById('step-count').textContent = stepCount;
+  hideHint();
+  renderHistory();
+  renderMatrix();
+  checkStatus(false);
+}
+
+function opSwap() {
+  const i = parseInt(document.getElementById('swap-i').value);
+  const j = parseInt(document.getElementById('swap-j').value);
+  if (i === j) { showToastMsg('Cannot swap a row with itself.'); return; }
+  [matrix[i], matrix[j]] = [matrix[j], matrix[i]];
+  pushHistory(`${rowLabel(i)} ↔ ${rowLabel(j)}`);
+}
+
+function opScale() {
+  const i    = parseInt(document.getElementById('scale-i').value);
+  const cStr = document.getElementById('scale-c').value;
+  const c    = parseFrac(cStr);
+  if (!c)        { showToastMsg('Invalid scalar. Use integers or fractions like 1/2.'); return; }
+  if (c.isZero()) { showToastMsg('Cannot multiply a row by 0.'); return; }
+  matrix[i] = matrix[i].map(f => f.mul(c));
+  pushHistory(`${rowLabel(i)} ← (${c.toString()}) · ${rowLabel(i)}`);
+}
+
+function opAdd() {
+  const i    = parseInt(document.getElementById('add-i').value);
+  const j    = parseInt(document.getElementById('add-j').value);
+  const cStr = document.getElementById('add-c').value;
+  const c    = parseFrac(cStr);
+  if (!c)         { showToastMsg('Invalid scalar. Use integers or fractions like -1/3.'); return; }
+  if (c.isZero()) { showToastMsg('Scalar is 0 — this operation does nothing.'); return; }
+  if (i === j)    { showToastMsg('Source and target rows must be different.'); return; }
+
+  matrix[i] = matrix[i].map((f, k) => f.add(c.mul(matrix[j][k])));
+
+  const cDisp = c.equals(F1) ? '' : c.equals(new Frac(-1)) ? '-' : `(${c.toString()})·`;
+  pushHistory(`${rowLabel(i)} ← ${rowLabel(i)} + ${cDisp}${rowLabel(j)}`);
+}
+
+// ═══════════════════════════════════════════════
+// UNDO
+// ═══════════════════════════════════════════════
+
+function undoStep() {
+  if (history.length === 0) { showToastMsg('Nothing to undo.'); return; }
+  const snap = history.pop();
+  matrix = snap.matrix;
+  opHistory.pop();
+  stepCount = Math.max(0, stepCount - 1);
+  document.getElementById('step-count').textContent = stepCount;
+  hideHint();
+  renderMatrix();
+  renderHistory();
+  checkStatus(false);
+}
+
+// ═══════════════════════════════════════════════
+// HISTORY RENDER
+// ═══════════════════════════════════════════════
+
+function renderHistory() {
+  const log = document.getElementById('history-log');
+  if (opHistory.length === 0) {
+    log.innerHTML = '<div class="history-empty">No operations yet.</div>';
+    return;
+  }
+  log.innerHTML = opHistory.map((desc, idx) => `
+    <div class="history-entry">
+      <span class="history-num">${idx + 1}.</span>
+      <span class="history-op">${desc}</span>
+    </div>`).join('');
+  log.scrollTop = log.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════
+// SUCCESS
+// ═══════════════════════════════════════════════
+
+function showSuccess() {
+  document.getElementById('success-title').textContent =
+    goal === 'REF' ? 'Row Echelon Form!' : 'Reduced Row Echelon Form!';
+  document.getElementById('success-sub').textContent =
+    goal === 'REF'
+      ? 'You successfully reduced the matrix to REF (דירוג).'
+      : 'You successfully reduced the matrix to RREF (דירוג קנוני).';
+  document.getElementById('success-steps').textContent = stepCount;
+  document.getElementById('success-overlay').classList.add('show');
+}
+
+function closeSuccess() {
+  document.getElementById('success-overlay').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════
+
+let toastTimer;
+function showToastMsg(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+
+newGame();
+</script>
+</body>
+</html>
